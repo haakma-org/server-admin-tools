@@ -2,6 +2,7 @@
 
 SERVER_IDS_BEGIN=
 SERVER_IDS_END=
+SERVER_USERNAME=
 RUNAS=
 LOG_TO_SCREEN=FALSE
 UPDATE_TIME_SERVERS=FALSE
@@ -25,13 +26,15 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-while getopts :hb:e:r:su opt; do
+while getopts :hb:e:n:r:su opt; do
     case ${opt} in
         h) help; exit
         ;;
         b) SERVER_IDS_BEGIN=${OPTARG}
         ;;
         e) SERVER_IDS_END=${OPTARG}
+        ;;
+        n) SERVER_UERNAME=${OPTARG}
         ;;
         r) RUNAS=${OPTARG}
         ;;
@@ -49,10 +52,10 @@ done
 echo "CURRENT TIME (on my execution environment): `date`"
 for serverId in $(seq  -f "%02g" ${SERVER_IDS_BEGIN} ${SERVER_IDS_END});
 do
-    echo "[DEBUG] ssh -o StrictHostKeyChecking=no  molgenis@molgenis${serverId}.gcc.rug.nl 'cat | bash /dev/stdin' \"${serverId}\" < \"ntpd_check.bash\" >> /tmp/ntp.log"
+    echo "[DEBUG] ssh -o StrictHostKeyChecking=no  #username#@${serverUrl} 'cat | bash /dev/stdin' \"${serverUrl}\" < \"ntpd_check.bash\" >> /tmp/ntp.log"
     if [[ ${LOG_TO_SCREEN} == FALSE ]]; then
-        ssh -o StrictHostKeyChecking=no molgenis@molgenis${serverId}.gcc.rug.nl 'cat | bash /dev/stdin' "${serverId}" "${UPDATE_TIME_SERVERS}" < "ntpd_check.bash" >> /tmp/ntp-debug.log
+        ssh -o StrictHostKeyChecking=no ${SERVER_USERNAME}@${serverUrl} 'cat | bash /dev/stdin' "${serverId}" "${UPDATE_TIME_SERVERS}" < "ntpd_check.bash" >> /tmp/ntp-debug.log
     else
-        ssh -o StrictHostKeyChecking=no molgenis@molgenis${serverId}.gcc.rug.nl 'cat | bash /dev/stdin' "${serverId}" "${UPDATE_TIME_SERVERS}" < "ntpd_check.bash"
+        ssh -o StrictHostKeyChecking=no ${SERVER_USERNAME}@#${serverUrl} 'cat | bash /dev/stdin' "${serverId}" "${UPDATE_TIME_SERVERS}" < "ntpd_check.bash"
     fi
 done

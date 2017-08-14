@@ -1,10 +1,10 @@
 #!/bin/bash
 
-SERVER="molgenis"
+SERVER="#servername#"
 UPDATE_TIME_SERVERS=FALSE
 
 if [[ ! -z ${1} ]]; then
-  SERVER="molgenis${1}"
+  SERVER="ß${1}"
 fi
 
 if [[ ! -z ${2} ]]; then
