@@ -20,7 +20,7 @@ function help() {
   echo "* + -t = TARGET_USER                                                                                                                      *"
   echo "* Enter the target users public key you want to create on the target servers                                                              *"
   echo "* + -p = PUBLIC_KEY                                                                                                                       *"
-  echo "* For example: ./create_public_key_on_servers.bash -b 0 -e 99 -r shaakma -t shaakma -p "ssh-rsa khnjasljkbdfkvelkkasBCSJHLDCVDBQF234875Y" *"
+  echo "* For example: ./create_public_key_on_servers.bash -b 0 -e 99 -r shaakma -t shaakma -p 'ssh-rsa khnjasljkbdfkvelkkasBCSJHLDCVDBQF234875Y' *"
   echo "*******************************************************************************************************************************************"
 }
 
@@ -54,8 +54,6 @@ echo "Script will be run as: [ ${RUNAS} ] for target user: [ ${TARGET_USER} ] on
 
 for serverId in $(seq  -f "%02g" ${SERVER_IDS_BEGIN} ${SERVER_IDS_END});
 do
-    echo "[DEBUG] ssh -J umcg-${RUNAS}@lobby.hpc.rug.nl molgenis@molgenis${serverId}.gcc.rug.nl '>> ${TARGET_USER} ~/.ssh/authorized_keys'"
-    echo "[DEBUG] ssh -J umcg-${RUNAS}@lobby.hpc.rug.nl molgenis@molgenis${serverId}.gcc.rug.nl '>> \"${PUBLIC_KEY}\" ~/.ssh/authorized_keys'"
-    ssh -J umcg-${RUNAS}@lobby.hpc.rug.nl molgenis@molgenis${serverId}.gcc.rug.nl '>> ${TARGET_USER} ~/.ssh/authorized_keys'
-    ssh -J umcg-${RUNAS}@lobby.hpc.rug.nl molgenis@molgenis${serverId}.gcc.rug.nl '>> \"${PUBLIC_KEY}\" ~/.ssh/authorized_keys'
+    echo "[DEBUG] ssh -o StrictHostKeyChecking=no molgenis@molgenis${serverId}.gcc.rug.nl < \"add_lines_to_authorized_keys.bash\""
+    ssh -o StrictHostKeyChecking=no molgenis@molgenis${serverId}.gcc.rug.nl < "add_lines_to_authorized_keys.bash"
 done

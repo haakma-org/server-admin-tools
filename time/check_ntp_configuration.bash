@@ -3,6 +3,8 @@
 SERVER_IDS_BEGIN=
 SERVER_IDS_END=
 RUNAS=
+LOG_TO_SCREEN=FALSE
+UPDATE_TIME_SERVERS=FALSE
 
 function help() {
   echo "*********************************************************************"
@@ -23,7 +25,7 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-while getopts :hb:e:r: opt; do
+while getopts :hb:e:r:su opt; do
     case ${opt} in
         h) help; exit
         ;;
@@ -32,6 +34,10 @@ while getopts :hb:e:r: opt; do
         e) SERVER_IDS_END=${OPTARG}
         ;;
         r) RUNAS=${OPTARG}
+        ;;
+        s) LOG_TO_SCREEN=TRUE
+        ;;
+        u) UPDATE_TIME_SERVERS=TRUE
         ;;
         :) echo "Missing argument for option -${OPTARG}"; exit 1
         ;;
@@ -43,6 +49,10 @@ done
 echo "CURRENT TIME (on my execution environment): `date`"
 for serverId in $(seq  -f "%02g" ${SERVER_IDS_BEGIN} ${SERVER_IDS_END});
 do
-    echo "[DEBUG] ssh -J umcg-${RUNAS}@lobby.hpc.rug.nl molgenis@molgenis${serverId}.gcc.rug.nl 'echo molgenis${serverId} : `date`'"
-    ssh -J umcg-${RUNAS}@lobby.hpc.rug.nl molgenis@molgenis${serverId}.gcc.rug.nl "echo molgenis${serverId} : `date`" >> ntp.log
+    echo "[DEBUG] ssh -o StrictHostKeyChecking=no  molgenis@molgenis${serverId}.gcc.rug.nl 'cat | bash /dev/stdin' \"${serverId}\" < \"ntpd_check.bash\" >> /tmp/ntp.log"
+    if [[ ${LOG_TO_SCREEN} == FALSE ]]; then
+        ssh -o StrictHostKeyChecking=no molgenis@molgenis${serverId}.gcc.rug.nl 'cat | bash /dev/stdin' "${serverId}" "${UPDATE_TIME_SERVERS}" < "ntpd_check.bash" >> /tmp/ntp-debug.log
+    else
+        ssh -o StrictHostKeyChecking=no molgenis@molgenis${serverId}.gcc.rug.nl 'cat | bash /dev/stdin' "${serverId}" "${UPDATE_TIME_SERVERS}" < "ntpd_check.bash"
+    fi
 done
