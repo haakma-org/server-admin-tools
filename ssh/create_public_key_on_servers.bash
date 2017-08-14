@@ -2,6 +2,7 @@
 
 SERVER_IDS_BEGIN=
 SERVER_IDS_END=
+SERVER_USERNAME=
 RUNAS=
 PUBLIC_KEY=
 TARGET_USER=
@@ -37,6 +38,8 @@ while getopts :hb:e:r:p:t: opt; do
         ;;
         e) SERVER_IDS_END=${OPTARG}
         ;;
+        n) SERVER_USERNAME=${OPTARG}
+        ;;
         r) RUNAS=${OPTARG}
         ;;
         p) PUBLIC_KEY=${OPTARG}
@@ -54,6 +57,7 @@ echo "Script will be run as: [ ${RUNAS} ] for target user: [ ${TARGET_USER} ] on
 
 for serverId in $(seq  -f "%02g" ${SERVER_IDS_BEGIN} ${SERVER_IDS_END});
 do
-    echo "[DEBUG] ssh -o StrictHostKeyChecking=no molgenis@molgenis${serverId}.gcc.rug.nl < \"add_lines_to_authorized_keys.bash\""
-    ssh -o StrictHostKeyChecking=no molgenis@molgenis${serverId}.gcc.rug.nl < "add_lines_to_authorized_keys.bash"
+    SERVER_URL=${serverId}
+    echo "[DEBUG] ssh -o StrictHostKeyChecking=no ${SERVER_USERNAME}@${SERVER_URL} < \"add_lines_to_authorized_keys.bash\""
+    ssh -o StrictHostKeyChecking=no ${SERVER_USERNAME}@${SERVER_URL} < "add_lines_to_authorized_keys.bash"
 done

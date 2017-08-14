@@ -34,7 +34,7 @@ while getopts :hb:e:n:r:su opt; do
         ;;
         e) SERVER_IDS_END=${OPTARG}
         ;;
-        n) SERVER_UERNAME=${OPTARG}
+        n) SERVER_USERNAME=${OPTARG}
         ;;
         r) RUNAS=${OPTARG}
         ;;
@@ -50,12 +50,13 @@ while getopts :hb:e:n:r:su opt; do
 done
 
 echo "CURRENT TIME (on my execution environment): `date`"
-for serverId in $(seq  -f "%02g" ${SERVER_IDS_BEGIN} ${SERVER_IDS_END});
+for serverId in $(seq  -f "%02g" ${SERVER_IDS_BEGIN} ${SERVER_IDS_END});ß
 do
-    echo "[DEBUG] ssh -o StrictHostKeyChecking=no  #username#@${serverUrl} 'cat | bash /dev/stdin' \"${serverUrl}\" < \"ntpd_check.bash\" >> /tmp/ntp.log"
+    SERVER_URL=${serverId}
+    echo "[DEBUG] ssh -o StrictHostKeyChecking=no  ${SERVER_USERNAME}@${serverUrl} 'cat | bash /dev/stdin' \"${serverUrl}\" < \"ntpd_check.bash\" >> /tmp/ntp.log"
     if [[ ${LOG_TO_SCREEN} == FALSE ]]; then
-        ssh -o StrictHostKeyChecking=no ${SERVER_USERNAME}@${serverUrl} 'cat | bash /dev/stdin' "${serverId}" "${UPDATE_TIME_SERVERS}" < "ntpd_check.bash" >> /tmp/ntp-debug.log
+        ssh -o StrictHostKeyChecking=no ${SERVER_USERNAME}@${SERVER_URL} 'cat | bash /dev/stdin' "${SERVER_URL}" "${UPDATE_TIME_SERVERS}" < "ntpd_check.bash" >> /tmp/ntp-debug.log
     else
-        ssh -o StrictHostKeyChecking=no ${SERVER_USERNAME}@#${serverUrl} 'cat | bash /dev/stdin' "${serverId}" "${UPDATE_TIME_SERVERS}" < "ntpd_check.bash"
+        ssh -o StrictHostKeyChecking=no ${SERVER_USERNAME}@#${SERVER_URL} 'cat | bash /dev/stdin' "${SERVER_URL}" "${UPDATE_TIME_SERVERS}" < "ntpd_check.bash"
     fi
 done
