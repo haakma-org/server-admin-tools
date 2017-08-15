@@ -5,10 +5,16 @@ All kinds of tooling to manage your servers (bash-based scripting)
 ## Time administration for servers
 Check if NTP-configuration is active. If it is active you can check the configuration with `ntpstat`. If it is not configured then you can configure it with the `ntpd`-service.
 
+If you want to determine if the ntpd service is configured and in which state it is running you can run the following command:
+
+```
+ntpstat
+```
+
 You run the following commands and the service is configured.
 
 ```
-ntpd
+ntpdate
 ```
 
  
