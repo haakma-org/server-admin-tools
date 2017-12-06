@@ -39,7 +39,7 @@ function LOG() {
     LOG_PREFIX="[TRACE]"
   fi
   if [[ ${LOG_LEVEL} == 1 || ${LOG_LEVEL} == 2 ]]; then
-    echo "${LOG_PREFIX} | ${NOW} | ${LOG_MESSAGE}" >> ${LOG_DIR}/archived_projects_${NOW}
+    echo "${LOG_PREFIX} | ${NOW} | ${LOG_MESSAGE}" > ${LOG_DIR}/${NOW}_archived_projects.log
   fi
   if [[ ${SET_LOG_LEVEL} -ge ${LOG_LEVEL} ]]; then
     echo "${LOG_PREFIX} | ${NOW} | ${LOG_MESSAGE}"
@@ -68,7 +68,6 @@ while getopts :hy:d:l: opt; do
     esac
 done
 
-PERIOD=$((${NUMBER_OF_YEARS}*365))
 LOG 3 "################################################################################"
 LOG 3 " Start of archiving projects"
 LOG 3 " ------------------------------------------------------------------------------"
@@ -79,16 +78,19 @@ LOG 3 " Running in ROOT-directory:          [ ${BASE_DIR} ]"
 LOG 3 " Logs go to directory:               [ ${LOG_DIR} ]"
 LOG 3 " Log level is set to:                [ ${SET_LOG_LEVEL} ]"
 LOG 3 " ------------------------------------------------------------------------------"
+
 mkdir -p ${LOG_DIR}
+
+PERIOD=$((${NUMBER_OF_YEARS}*365))
 DIR_LIST=(`find ${BASE_DIR}/ -iname "*" -mtime +${PERIOD} | cut -d/ -f -3 | sort -u`)
 for ((index = 0; index < ${#DIR_LIST[@]}; ++index)); do
   if [ ${index} != 0 ]; then
     FOUND_DIR=${DIR_LIST[index]}
     NUMBER_OF_OLD_FILES_FOUND=`find ${FOUND_DIR} -iname "*" -mtime +${PERIOD} | wc -l`
     NUMBER_OF_FILES_FOUND=`find ${FOUND_DIR} -iname "*" | wc -l`
-    LOG 5 " Project-directory: [ ${FOUND_DIR} ] older: [ ${NUMBER_OF_OLD_FILES_FOUND} ] newer: [ ${NUMBER_OF_FILES_FOUND} ]"
+    LOG 5 " Project-directory: [ ${FOUND_DIR} ] old: [ ${NUMBER_OF_OLD_FILES_FOUND} ] total: [ ${NUMBER_OF_FILES_FOUND} ]"
     if [ ${NUMBER_OF_OLD_FILES_FOUND} -eq ${NUMBER_OF_FILES_FOUND} ]; then
-      LOG 2 " Project directory: ${FOUND_DIR} will be archived"
+      LOG 2 " Archived project-directory: ${FOUND_DIR}"
     fi
   fi
 done
