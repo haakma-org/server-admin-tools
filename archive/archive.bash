@@ -2,20 +2,48 @@
 
 BASE_DIR=`pwd`
 NUMBER_OF_YEARS=1
+LOG_DIR=/var/log/archive/projects
+SET_LOG_LEVEL=3
+NOW=$(date +"%d-%m-%Y")
 
 function help() {
-  echo "*************************************************************************"
-  echo "* Usage                                                                 *"
-  echo "*************************************************************************"
-  echo "* RUN AS ROOT USER                                                      *"
-  echo "* Please specify a timeframe in years                                   *"
-  echo "* You can do this with:                                                 *"
-  echo "* + -y = [number of years]                                              *"
-  echo "* Enter the root-directory you want to run this script from             *"
-  echo "* + -d = [directory]                                                    *"
-  echo "* For example: ./archive.bash -y 2 -d /'                                *"
-  echo "* When all files are older in 1 subdirectory the subdirecty is archived *"
-  echo "*************************************************************************"
+  echo "***************************************************************************"
+  echo "* Usage                                                                   *"
+  echo "***************************************************************************"
+  echo "* RUN AS ROOT USER                                                        *"
+  echo "* Please specify a timeframe in years                                     *"
+  echo "* You can do this with:                                                   *"
+  echo "* + -y = [number of years]                                                *"
+  echo "* Enter the root-directory you want to run this script from               *"
+  echo "* + -d = [directory]                                                      *"
+  echo "* Enter the desired log level                                             *"
+  echo "* + -l = [log level (ERROR=1, WARNING=2, INFO=3, DEBUG=4, TRACE=5)]       *"
+  echo "* For example: ./archive.bash -y 2 -d /'                                  *"
+  echo "* When all files are older in 1 subdirectory the subdirectory is archived *"
+  echo "***************************************************************************"
+}
+
+function LOG() {
+  LOG_LEVEL=${1}
+  LOG_MESSAGE=${2}
+  LOG_PREFIX="[INFO]"
+  if [[ -z ${LOG_LEVEL} ]]; then
+    LOG_LEVEL=3
+  elif [[ ${LOG_LEVEL} == 1 ]]; then
+    LOG_PREFIX="[ERROR]"
+  elif [[ ${LOG_LEVEL} == 2 ]]; then
+    LOG_PREFIX="[WARN]"
+  elif [[ ${LOG_LEVEL} == 4 ]]; then
+    LOG_PREFIX="[DEBUG]"
+  elif [[ ${LOG_LEVEL} == 5 ]]; then
+    LOG_PREFIX="[TRACE]"
+  fi
+  if [[ ${LOG_LEVEL} == 1 || ${LOG_LEVEL} == 2 ]]; then
+    echo "${LOG_PREFIX} | ${NOW} | ${LOG_MESSAGE}" >> ${LOG_DIR}/archived_projects_${NOW}
+  fi
+  if [[ ${SET_LOG_LEVEL} -ge ${LOG_LEVEL} ]]; then
+    echo "${LOG_PREFIX} | ${NOW} | ${LOG_MESSAGE}"
+  fi
 }
 
 if [ $# -eq 0 ]; then
@@ -23,13 +51,15 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-while getopts :hy:d: opt; do
+while getopts :hy:d:l: opt; do
     case ${opt} in
         h) help; exit
         ;;
         y) NUMBER_OF_YEARS=${OPTARG}
         ;;
         d) BASE_DIR=${OPTARG}
+        ;;
+        l) SET_LOG_LEVEL=${OPTARG}
         ;;
         :) echo "Missing argument for option -${OPTARG}"; exit 1
         ;;
@@ -39,17 +69,29 @@ while getopts :hy:d: opt; do
 done
 
 PERIOD=$((${NUMBER_OF_YEARS}*365))
-
-echo ""
-echo "######################################################################"
-echo "# Script is running for all files older then: [ ${NUMBER_OF_YEARS} ] #"
-echo "# Script root-directoryi:                     [ ${BASE_DIR} ]        #"
-echo "######################################################################"
-DIR_LIST=$(find ${BASE_DIR/} -iname "*" -mtime +${PERIOD} | cut -d/ -f -3 | sort -u)
+LOG 3 "################################################################################"
+LOG 3 " Start of archiving projects"
+LOG 3 " ------------------------------------------------------------------------------"
+LOG 3 " Setup environment"
+LOG 3 " ------------------------------------------------------------------------------"
+LOG 3 " Searching for all files older then: [ ${NUMBER_OF_YEARS} ]"
+LOG 3 " Running in ROOT-directory:          [ ${BASE_DIR} ]"
+LOG 3 " Logs go to directory:               [ ${LOG_DIR} ]"
+LOG 3 " Log level is set to:                [ ${SET_LOG_LEVEL} ]"
+LOG 3 " ------------------------------------------------------------------------------"
+mkdir -p ${LOG_DIR}
+DIR_LIST=(`find ${BASE_DIR}/ -iname "*" -mtime +${PERIOD} | cut -d/ -f -3 | sort -u`)
 for ((index = 0; index < ${#DIR_LIST[@]}; ++index)); do
- if [ ${index} = 0 ]; then
-  echo "root directory is: ${DIR_LIST[index]}"
- else
-  echo "${DIR_LIST[index]}"
- fi
+  if [ ${index} != 0 ]; then
+    FOUND_DIR=${DIR_LIST[index]}
+    NUMBER_OF_OLD_FILES_FOUND=`find ${FOUND_DIR} -iname "*" -mtime +${PERIOD} | wc -l`
+    NUMBER_OF_FILES_FOUND=`find ${FOUND_DIR} -iname "*" | wc -l`
+    LOG 5 " Project-directory: [ ${FOUND_DIR} ] older: [ ${NUMBER_OF_OLD_FILES_FOUND} ] newer: [ ${NUMBER_OF_FILES_FOUND} ]"
+    if [ ${NUMBER_OF_OLD_FILES_FOUND} -eq ${NUMBER_OF_FILES_FOUND} ]; then
+      LOG 2 " Project directory: ${FOUND_DIR} will be archived"
+    fi
+  fi
 done
+LOG 3 " ------------------------------------------------------------------------------"
+LOG 3 " End of archiving projects"
+LOG 3 "################################################################################"
