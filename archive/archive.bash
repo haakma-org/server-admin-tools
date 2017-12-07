@@ -40,7 +40,7 @@ function LOG() {
   elif [[ ${LOG_LEVEL} == 5 ]]; then
     LOG_PREFIX="[TRACE]"
   fi
-  if [[ ${LOG_LEVEL} == 1 || ${LOG_LEVEL} == 2 ]]; then
+  if [[ ${LOG_LEVEL} -le 3 ]]; then
     echo "${LOG_PREFIX} | ${NOW} ${TIME} | ${LOG_MESSAGE}" >> ${LOG_DIR}/${NOW}_archived_projects.log
   fi
   if [[ ${SET_LOG_LEVEL} -ge ${LOG_LEVEL} ]]; then
@@ -63,9 +63,9 @@ while getopts :hy:d:l: opt; do
         ;;
         l) SET_LOG_LEVEL=${OPTARG}
         ;;
-        :) echo "Missing argument for option -${OPTARG}"; exit 1
+        :) LOG 5 "Missing argument for option -${OPTARG}"; exit 1
         ;;
-       \?) echo "Unknown option -${OPTARG}"; exit 1
+       \?) LOG 5 "Unknown option -${OPTARG}"; exit 1
         ;;
     esac
 done
@@ -86,17 +86,25 @@ mkdir -p ${LOG_DIR}
 PERIOD=$((${NUMBER_OF_YEARS}*365))
 cd ${SEARCH_DIR}
 DIR_LIST=(`find . -iname "*" -mtime +${PERIOD} | cut -d/ -f -2 | sort -u`)
+TOTAL_CLEARED_SPACE=0
 for ((index = 0; index < ${#DIR_LIST[@]}; ++index)); do
-  if [ ${index} != 0 ]; then
+  if [[ ${index} != 0 ]]; then
     FOUND_DIR=${DIR_LIST[index]}
-    NUMBER_OF_OLD_FILES_FOUND=`find ${FOUND_DIR} -iname "*" -mtime +${PERIOD} | wc -l`
-    NUMBER_OF_FILES_FOUND=`find ${FOUND_DIR} -iname "*" | wc -l`
-    LOG 5 "Project-directory: [ ${FOUND_DIR} ] old: [ ${NUMBER_OF_OLD_FILES_FOUND} ] total: [ ${NUMBER_OF_FILES_FOUND} ]"
-    if [ ${NUMBER_OF_OLD_FILES_FOUND} -eq ${NUMBER_OF_FILES_FOUND} ]; then
-      LOG 2 "Archived project-directory: ${FOUND_DIR}"
+    if [[ -d ${FOUND_DIR} ]]; then
+      NUMBER_OF_OLD_FILES_FOUND=`find ${FOUND_DIR} -iname "*" -mtime +${PERIOD} | wc -l`
+      NUMBER_OF_FILES_FOUND=`find ${FOUND_DIR} -iname "*" | wc -l`
+      LOG 5 "Project-directory: [ ${FOUND_DIR} ] old: [ ${NUMBER_OF_OLD_FILES_FOUND} ] total: [ ${NUMBER_OF_FILES_FOUND} ]"
+      if [ ${NUMBER_OF_OLD_FILES_FOUND} -eq ${NUMBER_OF_FILES_FOUND} ]; then
+        CLEARED_SPACE=`du -sm ${FOUND_DIR} | cut -f1`
+        TOTAL_CLEARED_SPACE=$((${TOTAL_CLEARED_SPACE}+${CLEARED_SPACE}))
+        LOG 3 "Archived project-directory: ${FOUND_DIR} | space cleared: [ ${CLEARED_SPACE} mb ]"
+      fi
+    else
+      LOG 2 "This file: [ ${FOUND_DIR} ] is not a directory"
     fi
   fi
 done
+LOG 3 "Total space cleared: [ ${TOTAL_CLEARED_SPACE} mb ]"
 cd ${BASE_DIR}
 LOG 3 " ------------------------------------------------------------------------------"
 LOG 3 " End of archiving projects"
