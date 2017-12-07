@@ -1,12 +1,14 @@
 #!/bin/bash
 
 BASE_DIR=`pwd`
+SEARCH_DIR=`pwd`
 NUMBER_OF_YEARS=1
 LOG_DIR=/var/log/archive/projects
 SET_LOG_LEVEL=3
 NOW=$(date +"%d-%m-%Y")
+TIME=$(date +"%T")
 
-function help() {
+function HELP() {
   echo "***************************************************************************"
   echo "* Usage                                                                   *"
   echo "***************************************************************************"
@@ -39,25 +41,25 @@ function LOG() {
     LOG_PREFIX="[TRACE]"
   fi
   if [[ ${LOG_LEVEL} == 1 || ${LOG_LEVEL} == 2 ]]; then
-    echo "${LOG_PREFIX} | ${NOW} | ${LOG_MESSAGE}" > ${LOG_DIR}/${NOW}_archived_projects.log
+    echo "${LOG_PREFIX} | ${NOW} ${TIME} | ${LOG_MESSAGE}" >> ${LOG_DIR}/${NOW}_archived_projects.log
   fi
   if [[ ${SET_LOG_LEVEL} -ge ${LOG_LEVEL} ]]; then
-    echo "${LOG_PREFIX} | ${NOW} | ${LOG_MESSAGE}"
+    echo "${LOG_PREFIX} | ${NOW} ${TIME} | ${LOG_MESSAGE}"
   fi
 }
 
 if [ $# -eq 0 ]; then
-    help
+    HELP
     exit 1
 fi
 
 while getopts :hy:d:l: opt; do
     case ${opt} in
-        h) help; exit
+        h) HELP; exit
         ;;
         y) NUMBER_OF_YEARS=${OPTARG}
         ;;
-        d) BASE_DIR=${OPTARG}
+        d) SEARCH_DIR=${OPTARG}
         ;;
         l) SET_LOG_LEVEL=${OPTARG}
         ;;
@@ -69,12 +71,12 @@ while getopts :hy:d:l: opt; do
 done
 
 LOG 3 "################################################################################"
-LOG 3 " Start of archiving projects"
+LOG 3 " Start archiving projects"
 LOG 3 " ------------------------------------------------------------------------------"
 LOG 3 " Setup environment"
 LOG 3 " ------------------------------------------------------------------------------"
-LOG 3 " Searching for all files older then: [ ${NUMBER_OF_YEARS} ]"
-LOG 3 " Running in ROOT-directory:          [ ${BASE_DIR} ]"
+LOG 3 " Search files older then (years):    [ ${NUMBER_OF_YEARS} ]"
+LOG 3 " Running in ROOT-directory:          [ ${SEARCH_DIR} ]"
 LOG 3 " Logs go to directory:               [ ${LOG_DIR} ]"
 LOG 3 " Log level is set to:                [ ${SET_LOG_LEVEL} ]"
 LOG 3 " ------------------------------------------------------------------------------"
@@ -82,18 +84,20 @@ LOG 3 " ------------------------------------------------------------------------
 mkdir -p ${LOG_DIR}
 
 PERIOD=$((${NUMBER_OF_YEARS}*365))
-DIR_LIST=(`find ${BASE_DIR}/ -iname "*" -mtime +${PERIOD} | cut -d/ -f -3 | sort -u`)
+cd ${SEARCH_DIR}
+DIR_LIST=(`find . -iname "*" -mtime +${PERIOD} | cut -d/ -f -2 | sort -u`)
 for ((index = 0; index < ${#DIR_LIST[@]}; ++index)); do
   if [ ${index} != 0 ]; then
     FOUND_DIR=${DIR_LIST[index]}
     NUMBER_OF_OLD_FILES_FOUND=`find ${FOUND_DIR} -iname "*" -mtime +${PERIOD} | wc -l`
     NUMBER_OF_FILES_FOUND=`find ${FOUND_DIR} -iname "*" | wc -l`
-    LOG 5 " Project-directory: [ ${FOUND_DIR} ] old: [ ${NUMBER_OF_OLD_FILES_FOUND} ] total: [ ${NUMBER_OF_FILES_FOUND} ]"
+    LOG 5 "Project-directory: [ ${FOUND_DIR} ] old: [ ${NUMBER_OF_OLD_FILES_FOUND} ] total: [ ${NUMBER_OF_FILES_FOUND} ]"
     if [ ${NUMBER_OF_OLD_FILES_FOUND} -eq ${NUMBER_OF_FILES_FOUND} ]; then
-      LOG 2 " Archived project-directory: ${FOUND_DIR}"
+      LOG 2 "Archived project-directory: ${FOUND_DIR}"
     fi
   fi
 done
+cd ${BASE_DIR}
 LOG 3 " ------------------------------------------------------------------------------"
 LOG 3 " End of archiving projects"
 LOG 3 "################################################################################"
