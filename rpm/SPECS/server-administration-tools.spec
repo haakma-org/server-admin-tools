@@ -3,26 +3,29 @@ Version:        1.0.0
 Release:        1
 Summary:        Server administration tools for CentOS
 
-Group:          haakma.org
+Group:          haakma-org
 BuildArch:      noarch
+Requires:       bash
 License:        GPL
 URL:            https://github.com/sidohaakma/server-administration-tools.git
-Source0:        server-administration-tools.tar.gz
+Source0:        %{name}-%{version}.tar.gz
 
 %description
 Scripts for SSH tunneling and key-sharing, time management, backup and archiving
 
 %prep
-%setup -q
+
 %build
+
 %install
-install -m 0755 -d $RPM_BUILD_ROOT/src/archive/archive.bash
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT/usr/local/sat/
+cp -r src/ $RPM_BUILD_ROOT/usr/local/sat/
 
 %files
-/etc/sat
-/usr/share/sat/archive/archive.bash
+/usr/local/sat
 
-%pos
+%post
 ln -f -s /usr/share/sat/archive.bash /usr/local/bin/archive
 
 %changelog
