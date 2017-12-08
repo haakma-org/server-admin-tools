@@ -2,6 +2,7 @@
 
 BASE_DIR=`pwd`
 SEARCH_DIR=`pwd`
+TARGET_DIR=`pwd`
 NUMBER_OF_YEARS=1
 LOG_DIR=/var/log/archive/projects
 SET_LOG_LEVEL=3
@@ -17,6 +18,8 @@ function HELP() {
   echo "* + -y = [number of years]                                                *"
   echo "* Enter the root-directory you want to run this script from               *"
   echo "* + -d = [directory]                                                      *"
+  echo "* Enter the target-directory you want to copy the files in                *"
+  echo "* + -t = [directory]                                                      *"
   echo "* Enter the desired log level                                             *"
   echo "* + -l = [log level (ERROR=1, WARNING=2, INFO=3, DEBUG=4, TRACE=5)]       *"
   echo "* For example: ./archive.bash -y 2 -d /'                                  *"
@@ -54,13 +57,15 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-while getopts :hy:d:l: opt; do
+while getopts :hy:d:l:t: opt; do
     case ${opt} in
         h) HELP; exit
         ;;
         y) NUMBER_OF_YEARS=${OPTARG}
         ;;
         d) SEARCH_DIR=${OPTARG}
+        ;;
+        t) TARGET_DIR=${OPTARG}
         ;;
         l) SET_LOG_LEVEL=${OPTARG}
         ;;
@@ -101,6 +106,7 @@ for ((index = 0; index < ${#DIR_LIST[@]}; ++index)); do
       if [ ${NUMBER_OF_OLD_FILES_FOUND} -eq ${NUMBER_OF_FILES_FOUND} ]; then
         CLEARED_SPACE=$((${CLEARED_SPACE}+${SPACE}))
         LOG 3 "Archived project-directory: ${FOUND_DIR} | space cleared: [ ${SPACE} mb ]"
+        cp -r ${FOUND_DIR} ${TARGET_DIR}
       fi
     else
       LOG 2 "This file: [ ${FOUND_DIR} ] is not a directory"

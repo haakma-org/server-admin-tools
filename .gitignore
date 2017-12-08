@@ -1,2 +1,3 @@
 .idea
 *.iml
+rpm/**/*.tar.gz
