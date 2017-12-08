@@ -5,8 +5,7 @@ SEARCH_DIR=`pwd`
 NUMBER_OF_YEARS=1
 LOG_DIR=/var/log/archive/projects
 SET_LOG_LEVEL=3
-NOW=$(date +"%d-%m-%Y")
-TIME=$(date +"%T")
+
 
 function HELP() {
   echo "***************************************************************************"
@@ -29,6 +28,8 @@ function LOG() {
   LOG_LEVEL=${1}
   LOG_MESSAGE=${2}
   LOG_PREFIX="[INFO]"
+  DATE=$(date +"%d-%m-%Y")
+  TIME=$(date +"%T")
   if [[ -z ${LOG_LEVEL} ]]; then
     LOG_LEVEL=3
   elif [[ ${LOG_LEVEL} == 1 ]]; then
@@ -41,10 +42,10 @@ function LOG() {
     LOG_PREFIX="[TRACE]"
   fi
   if [[ ${LOG_LEVEL} -le 3 ]]; then
-    echo "${LOG_PREFIX} | ${NOW} ${TIME} | ${LOG_MESSAGE}" >> ${LOG_DIR}/${NOW}_archived_projects.log
+    echo "${LOG_PREFIX} | ${DATE} ${TIME} | ${LOG_MESSAGE}" >> ${LOG_DIR}/${DATE}_archived_projects.log
   fi
   if [[ ${SET_LOG_LEVEL} -ge ${LOG_LEVEL} ]]; then
-    echo "${LOG_PREFIX} | ${NOW} ${TIME} | ${LOG_MESSAGE}"
+    echo "${LOG_PREFIX} | ${DATE} ${TIME} | ${LOG_MESSAGE}"
   fi
 }
 
@@ -71,41 +72,45 @@ while getopts :hy:d:l: opt; do
 done
 
 LOG 3 "################################################################################"
-LOG 3 " Start archiving projects"
-LOG 3 " ------------------------------------------------------------------------------"
-LOG 3 " Setup environment"
-LOG 3 " ------------------------------------------------------------------------------"
-LOG 3 " Search files older then (years):    [ ${NUMBER_OF_YEARS} ]"
-LOG 3 " Running in ROOT-directory:          [ ${SEARCH_DIR} ]"
-LOG 3 " Logs go to directory:               [ ${LOG_DIR} ]"
-LOG 3 " Log level is set to:                [ ${SET_LOG_LEVEL} ]"
-LOG 3 " ------------------------------------------------------------------------------"
+LOG 3 "Start archiving projects"
+LOG 3 "--------------------------------------------------------------------------------"
+LOG 3 "Setup environment"
+LOG 3 "--------------------------------------------------------------------------------"
+LOG 3 "Search files older then (years):    [ ${NUMBER_OF_YEARS} ]"
+LOG 3 "Running in ROOT-directory:          [ ${SEARCH_DIR} ]"
+LOG 3 "Logs go to directory:               [ ${LOG_DIR} ]"
+LOG 3 "Log level is set to:                [ ${SET_LOG_LEVEL} ]"
+LOG 3 "--------------------------------------------------------------------------------"
 
 mkdir -p ${LOG_DIR}
 
 PERIOD=$((${NUMBER_OF_YEARS}*365))
 cd ${SEARCH_DIR}
 DIR_LIST=(`find . -iname "*" -mtime +${PERIOD} | cut -d/ -f -2 | sort -u`)
-TOTAL_CLEARED_SPACE=0
+CLEARED_SPACE=0
+CHECKED_SPACE=0
 for ((index = 0; index < ${#DIR_LIST[@]}; ++index)); do
   if [[ ${index} != 0 ]]; then
     FOUND_DIR=${DIR_LIST[index]}
     if [[ -d ${FOUND_DIR} ]]; then
       NUMBER_OF_OLD_FILES_FOUND=`find ${FOUND_DIR} -iname "*" -mtime +${PERIOD} | wc -l`
       NUMBER_OF_FILES_FOUND=`find ${FOUND_DIR} -iname "*" | wc -l`
-      LOG 5 "Project-directory: [ ${FOUND_DIR} ] old: [ ${NUMBER_OF_OLD_FILES_FOUND} ] total: [ ${NUMBER_OF_FILES_FOUND} ]"
+      SPACE=`du -sm ${FOUND_DIR} | cut -f1`
+      CHECKED_SPACE=$((${CHECKED_SPACE}+${SPACE}))
+      LOG 5 "Project-directory: [ ${FOUND_DIR} ] old: [ ${NUMBER_OF_OLD_FILES_FOUND} ] total: [ ${NUMBER_OF_FILES_FOUND} ] space: [ ${SPACE} mb ]"
       if [ ${NUMBER_OF_OLD_FILES_FOUND} -eq ${NUMBER_OF_FILES_FOUND} ]; then
-        CLEARED_SPACE=`du -sm ${FOUND_DIR} | cut -f1`
-        TOTAL_CLEARED_SPACE=$((${TOTAL_CLEARED_SPACE}+${CLEARED_SPACE}))
-        LOG 3 "Archived project-directory: ${FOUND_DIR} | space cleared: [ ${CLEARED_SPACE} mb ]"
+        CLEARED_SPACE=$((${CLEARED_SPACE}+${SPACE}))
+        LOG 3 "Archived project-directory: ${FOUND_DIR} | space cleared: [ ${SPACE} mb ]"
       fi
     else
       LOG 2 "This file: [ ${FOUND_DIR} ] is not a directory"
     fi
   fi
 done
-LOG 3 "Total space cleared: [ ${TOTAL_CLEARED_SPACE} mb ]"
+LOG 3 "--------------------------------------------------------------------------------"
+LOG 3 "Total space checked: [ ${CHECKED_SPACE} mb ]"
+LOG 3 "Total space cleared: [ ${CLEARED_SPACE} mb ]"
 cd ${BASE_DIR}
-LOG 3 " ------------------------------------------------------------------------------"
-LOG 3 " End of archiving projects"
+LOG 3 "--------------------------------------------------------------------------------"
+LOG 3 "End of archiving projects"
 LOG 3 "################################################################################"
