@@ -15,7 +15,7 @@
     </properties>
 
     <scm>
-        <connection>scm:git:https://github.com/haakma-org/server-admin-tools.git</connection>
+        <connection>scm:git:ssh://github.com/haakma-org/server-admin-tools.git</connection>
         <url>https://github.com/haakma-org/server-admin-tools</url>
     </scm>
 

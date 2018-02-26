@@ -11,20 +11,7 @@ pipeline {
     }
     stage('Build RPM') {
       steps {
-        echo "Create tarball"
-        sh "tar --create --gzip --file server-administration-tools.tar.gz src/"
-        echo "Make source-directory"
-        sh "mkdir -p rpm/SOURCES"
-        echo "Move sources-file to sources-directory"
-        sh "mv server-administration-tools.tar.gz rpm/SOURCES/."
-        echo "Create RPM"
-        sh "cd rpm/; rpmbuild --define "_topdir `pwd`" -ba SPECS/server-administration-tools.spec"
-      }
-    }
-    stage('Publish RPM') {
-      steps {
-        echo "Backup verbouw.haakma.org"
-        sh "./haakma.org-verbouw/backup/backup_haakma-verbouw.sh"
+        mvn
       }
     }
   }
